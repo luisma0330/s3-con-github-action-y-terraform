@@ -1,0 +1,47 @@
+name: Terraform Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  TF_VERSION: 1.6.0
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  terraform:
+    name: 'Terraform CI/CD'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Inicializar Terraform
+        run: terraform init
+
+      - name: Validar sintaxis
+        run: terraform validate
+
+      - name: Aplicar formato
+        run: terraform fmt -check
+
+      - name: Plan de infraestructura
+        run: terraform plan -input=false -var-file="terraform.tfvars"
+
+      - name: Aplicar cambios (solo main)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var-file="terraform.tfvars"

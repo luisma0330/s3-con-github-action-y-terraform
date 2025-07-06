@@ -1,0 +1,1 @@
+bucket_name = "devops-ci-cd-bucket-demo-alightaphid"
